@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/golang/glog"
 	"github.com/nilsocket/labdh"
 )
 
@@ -43,7 +42,7 @@ func TestDownload(t *testing.T) {
 	d.Close()
 
 	err := server.Shutdown(context.Background())
-	glog.Println("Close", err)
+	log.Println("Close", err)
 
 }
 

@@ -2,12 +2,12 @@ package labdh
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/vbauerster/mpb/v5"
 	aria "github.com/zyxar/argo/rpc"
 )
@@ -87,13 +87,13 @@ func (f *File) download(c aria.Client, gidMap *sync.Map) {
 
 	var fileDone, resumed bool
 	if fileDone, resumed = dlDone(f); fileDone {
-		glog.Infoln(f.workerID, f, "already downloaded")
+		log.Println(f.workerID, f, "already downloaded")
 		return
 	}
 
 	gid, err := c.AddURI(f.URLs, toAriaOpts(f))
 	if err != nil {
-		glog.Errorln(err)
+		log.Println(err)
 	}
 
 	done := make(chan struct{})
@@ -131,16 +131,16 @@ func (f *File) onFinish() {
 				}
 			}
 		}
-		glog.Infoln("called callback functions", f.workerID)
+		log.Println("called callback functions", f.workerID)
 	}
 
 	if f.OnComplete != nil {
-		glog.Infoln("sent OnComplete signal")
+		log.Println("sent OnComplete signal")
 		f.OnComplete <- struct{}{}
 	}
 
 	if f.cbChan != nil {
-		glog.Infoln("sent cbChan signal")
+		log.Println("sent cbChan signal")
 		f.cbChan <- struct{}{}
 	}
 }

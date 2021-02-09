@@ -2,6 +2,7 @@ package labdh
 
 import (
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/nilsocket/labdh/pkg/iaria"
 	aria "github.com/zyxar/argo/rpc"
 )
@@ -166,7 +166,7 @@ func (dl *Labdh) Close() {
 	refreshTicker.Stop()
 
 	if ok, err := dl.client.ForceShutdown(); err != nil {
-		glog.Infoln(ok, err)
+		log.Println(ok, err)
 	}
 }
 
@@ -199,7 +199,7 @@ func (dl *Labdh) workers() {
 	for i := 0; i < dl.ConcDls; i++ {
 
 		go func(i int) {
-			glog.Infoln("Worker", i, "started")
+			log.Println("Worker", i, "started")
 			defer dl.wg.Done()
 			for f := range dl.fic {
 				f.workerID = i
@@ -267,9 +267,9 @@ func (fs Files) CB(name, operation string, fns ...func(f *File)) Files {
 
 func setDefaultOpts(opts *Opts) *Labdh {
 
-	logFile := getLogFile(opts.LogPrefix)
+	logWriter := getLogWriter(opts.LogPrefix)
 
-	glog.CopyStandardLogTo(logFile)
+	log.SetOutput(logWriter)
 
 	if opts.BaseDir == "" {
 		opts.BaseDir = baseDir
@@ -287,7 +287,7 @@ func setDefaultOpts(opts *Opts) *Labdh {
 
 	opts.cmd, port, err = iaria.StartAria(opts.AriaArgs, opts.ConcDls)
 	if err != nil {
-		glog.Fatalln("unable to start aria", err)
+		log.Fatalln("unable to start aria", err)
 	}
 
 	// let aria2c start, so we can connect
@@ -304,11 +304,11 @@ func setDefaultOpts(opts *Opts) *Labdh {
 	)
 
 	if err != nil {
-		glog.Fatalln("unable to create client:", err)
+		log.Fatalln("unable to create client:", err)
 	}
 
 	if _, err := opts.client.GetVersion(); err != nil {
-		glog.Fatalln("unable to get version info:", err)
+		log.Fatalln("unable to get version info:", err)
 	}
 
 	// unexported fields
@@ -324,7 +324,7 @@ func setDefaultOpts(opts *Opts) *Labdh {
 	return d
 }
 
-func getLogFile(logPrefix string) string {
+func getLogWriter(logPrefix string) io.Writer {
 
 	err := os.MkdirAll(logDir, os.ModePerm)
 	if err != nil {
@@ -338,5 +338,10 @@ func getLogFile(logPrefix string) string {
 
 	logFile := filepath.Join(logDir, now)
 
-	return logFile
+	f, err := os.Open(logFile)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return f
 }
